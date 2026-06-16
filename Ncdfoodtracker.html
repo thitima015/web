@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>บันทึกอาหารและยา </title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght=300;400;500;600;700&family=IBM+Plex Mono:wght=400;500&display=swap');
+
+  :root {
+    --teal:    #0D9488;
+    --teal-lt: #CCFBF1;
+    --teal-dk: #0F766E;
+    --rose:    #E11D48;
+    --rose-lt: #FFE4E6;
+    --amber:   #D97706;
+    --amber-lt:#FEF3C7;
+    --sky:     #0284C7;
+    --sky-lt:  #E0F2FE;
+    --slate:   #1E293B;
+    --muted:   #64748B;
+    --border:  #E2E8F0;
+    --bg:      #F8FAFC;
+    --white:   #FFFFFF;
+    --green:   #16A34A;
+    --green-lt:#DCFCE7;
+    --purple:  #7C3AED;
+    --purple-lt:#EDE9FE;
+    --card-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.04);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--slate);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--teal-dk) 0%, var(--teal) 60%, #14B8A6 100%);
+    color: #fff;
+    padding: 20px 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(13,148,136,.3);
+  }
+  header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: .01em; }
+  header p  { font-size: .82rem; opacity: .85; margin-top: 2px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .date-badge {
+    background: rgba(255,255,255,.18);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: .78rem;
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    overflow-x: auto;
+    gap: 0;
+    position: sticky;
+    top: 80px;
+    z-index: 99;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 12px 8px 10px;
+    border: none;
+    background: none;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+  }
+  .tab-btn:hover:not(.active) { color: var(--slate); background: var(--bg); }
+
+  /* ── Layout ── */
+  main { padding: 16px; max-width: 600px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: var(--card-shadow);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title span { font-size: 1rem; }
+
+  /* ── Meal Time Selector ── */
+  .meal-times {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .meal-time-btn {
+    padding: 8px 4px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: none;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all .18s;
+  }
+  .meal-time-btn.active {
+    border-color: var(--teal);
+    background: var(--teal-lt);
+    color: var(--teal-dk);
+  }
+  .meal-time-btn .icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+
+  /* ── Food Groups ── */
+  .food-groups {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .food-group-btn {
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: none;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all .18s;
+  }
+  .food-group-btn .icon { font-size: 1.3rem; display: block; margin-bottom: 3px; }
+  .food-group-btn.carb.active    { border-color: var(--amber);  background: var(--amber-lt);  color: var(--amber); }
+  .food-group-btn.protein.active { border-color: var(--rose);   background: var(--rose-lt);   color: var(--rose); }
+  .food-group-btn.fat.active     { border-color: var(--purple); background: var(--purple-lt); color: var(--purple); }
+  .food-group-btn.veg.active     { border-color: var(--green);  background: var(--green-lt);  color: var(--green); }
+  .food-group-btn.fruit.active   { border-color: #EA580C;       background: #FFF7ED;           color: #EA580C; }
+  .food-group-btn.milk.active    { border-color: var(--sky);    background: var(--sky-lt);     color: var(--sky); }
+
+  /* ── Menu List ── */
+  .menu-search {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .9rem;
+    color: var(--slate);
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .menu-search:focus { border-color: var(--teal); }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+  .menu-grid::-webkit-scrollbar { width: 4px; }
+  .menu-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .menu-item {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 10px 8px;
+    cursor: pointer;
+    transition: all .18s;
+    background: none;
+    font-family: 'Sarabun', sans-serif;
+    text-align: left;
+    width: 100%;
+  }
+  .menu-item:hover { border-color: var(--teal); background: var(--teal-lt); }
+  .menu-item.selected { border-color: var(--teal); background: var(--teal-lt); }
+  .menu-item .name { font-size: .82rem; font-weight: 600; color: var(--slate); line-height: 1.3; margin-bottom: 4px; }
+  .menu-item .stats { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .badge.kcal { background: #FEF9C3; color: #854D0E; }
+  .badge.carb { background: var(--teal-lt); color: var(--teal-dk); }
+
+  /* ── Free Text ── */
+  .free-food-area {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .9rem;
+    color: var(--slate);
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 10px;
+  }
+  .free-food-area:focus { border-color: var(--teal); }
+
+  /* ── Carb Quantity ── */
+  .carb-qty-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    background: var(--teal-lt);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .carb-qty-row label { font-size: .82rem; font-weight: 600; color: var(--teal-dk); flex: 1; }
+  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    background: var(--white);
+    color: var(--teal);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .qty-btn:hover { background: var(--teal); color: var(--white); }
+  .qty-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--teal-dk);
+    min-width: 32px;
+    text-align: center;
+  }
+
+  /* ── Insulin ── */
+  .insulin-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 10px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: .78rem; font-weight: 600; color: var(--muted); }
+  .form-input, .form-select {
+    padding: 9px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .9rem;
+    color: var(--slate);
+    outline: none;
+    transition: border-color .2s;
+    background: var(--white);
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--rose); }
+  .add-btn {
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: none;
+    background: var(--teal);
+    color: var(--white);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .18s;
+    height: 42px;
+  }
+  .add-btn:hover { background: var(--teal-dk); }
+  .add-btn.rose  { background: var(--rose); }
+  .add-btn.rose:hover  { background: #BE123C; }
+
+  /* ── Log List ── */
+  .log-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .log-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    gap: 8px;
+  }
+  .log-item .log-left { flex: 1; min-width: 0; }
+  .log-item .log-name { font-size: .88rem; font-weight: 600; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-item .log-meta { font-size: .75rem; color: var(--muted); margin-top: 1px; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #CBD5E1;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px 4px;
+    transition: color .15s;
+    flex-shrink: 0;
+  }
+  .del-btn:hover { color: var(--rose); }
+
+  /* ── Summary ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .summary-card {
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .summary-card .s-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .summary-card .s-lbl { font-size: .72rem; font-weight: 600; }
+  .s-kcal  { background: #FEF9C3; }  .s-kcal  .s-val  { color: #854D0E; } .s-kcal  .s-lbl  { color: #A16207; }
+  .s-carb  { background: var(--teal-lt); } .s-carb  .s-val  { color: var(--teal-dk); } .s-carb  .s-lbl  { color: var(--teal-dk); }
+  .s-insulin { background: var(--rose-lt); } .s-insulin .s-val { color: var(--rose); } .s-insulin .s-lbl { color: var(--rose); }
+
+  .carb-guide {
+    background: linear-gradient(135deg, var(--teal-lt), #E0F2FE);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .carb-guide h3 { font-size: .85rem; font-weight: 700; color: var(--teal-dk); margin-bottom: 8px; }
+  .carb-guide-row { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--slate); margin-bottom: 4px; }
+  .carb-guide-row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+
+  /* ── ระบบคู่มือแสดงผลคำว่า image แยกตามหมวดหมู่สี ── */
+  .guide-section-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin: 18px 0 10px 0;
+  }
+  .v-title-carb    { background: var(--amber-lt); color: var(--amber); }
+  .v-title-fruit   { background: #FFF7ED; color: #EA580C; }
+  .v-title-veg     { background: var(--green-lt); color: var(--green); }
+  .v-title-protein { background: var(--rose-lt); color: var(--rose); }
+  .v-title-dessert { background: #E0F2FE; color: #0284C7; }
+
+  .visual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .visual-card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .visual-img-box {
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 4 / 3;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .bg-carb    { background: #FDE68A; color: #B45309; }
+  .bg-fruit   { background: #FED7AA; color: #C2410C; }
+  .bg-veg     { background: #A7F3D0; color: #047857; }
+  .bg-protein { background: #FECDD3; color: #BE123C; }
+  .bg-dessert { background: #BAE6FD; color: #0369A1; }
+
+  .visual-desc {
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--slate);
+    line-height: 1.4;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Meal Sections ── */
+  .meal-section { margin-bottom: 18px; }
+  .meal-section-header {
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--teal-dk);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--teal-lt);
+    border-radius: 8px;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    padding: 24px 0;
+  }
+  .empty-state .icon { font-size: 2rem; margin-bottom: 6px; }
+
+  /* ── Progress Bar ── */
+  .prog-wrap { background: var(--border); border-radius: 99px; height: 8px; margin-top: 8px; overflow: hidden; }
+  .prog-bar { height: 100%; border-radius: 99px; transition: width .4s; background: var(--teal); }
+  .prog-bar.warn { background: var(--amber); }
+  .prog-bar.danger { background: var(--rose); }
+
+  .prog-label { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── NCD Tip ── */
+  .tip-banner {
+    background: linear-gradient(135deg, #FFF7ED, #FEF9C3);
+    border-left: 4px solid var(--amber);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: .82rem;
+    color: #92400E;
+  }
+  .tip-banner strong { display: block; margin-bottom: 4px; font-size: .85rem; }
+
+  .save-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--teal-dk), var(--teal));
+    color: var(--white);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(13,148,136,.3);
+    transition: all .2s;
+    margin-top: 6px;
+  }
+  .save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(13,148,136,.35); }
+  .save-btn:active { transform: translateY(0); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--slate);
+    color: var(--white);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: .88rem;
+    font-weight: 600;
+    z-index: 999;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 420px) {
+    .summary-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .summary-card .s-val { font-size: 1.2rem; }
+    .menu-grid { grid-template-columns: 1fr; }
+    .food-groups { grid-template-columns: repeat(3, 1fr); }
+    .visual-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>บันทึกอาหารและยา</h1>
+    </div>
+    <div class="date-badge" id="dateBadge"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('record')">📝 บันทึก</button>
+  <button class="tab-btn" onclick="switchTab('log')">📋 รายการวันนี้</button>
+  <button class="tab-btn" onclick="switchTab('summary')">📊 สรุป</button>
+  <button class="tab-btn" onclick="switchTab('guide')">📚 คู่มือ</button>
+</div>
+
+<main>
+
+  <!-- ═══════════════ TAB: RECORD ═══════════════ -->
+  <div class="section active" id="tab-record">
+
+    <!-- Meal Time (ปรับเหลือ 3 มื้อหลัก) -->
+    <div class="card">
+      <div class="card-title"><span>🕐</span> มื้ออาหาร</div>
+      <div class="meal-times">
+        <button class="meal-time-btn active" data-meal="เช้า" onclick="selectMeal(this)">
+          <span class="icon">🌅</span>เช้า
+        </button>
+        <button class="meal-time-btn" data-meal="กลางวัน" onclick="selectMeal(this)">
+          <span class="icon">☀️</span>กลางวัน
+        </button>
+        <button class="meal-time-btn" data-meal="เย็น" onclick="selectMeal(this)">
+          <span class="icon">🌆</span>เย็น
+        </button>
+      </div>
+    </div>
+
+    <!-- Food Group Filter -->
+    <div class="card">
+      <div class="card-title"><span>🍽️</span> เลือกกลุ่มอาหาร (5 หมู่)</div>
+      <div class="food-groups">
+        <button class="food-group-btn carb active" data-group="all" onclick="filterGroup(this, 'all')">
+          <span class="icon">🍚</span>ทั้งหมด
+        </button>
+        <button class="food-group-btn carb" data-group="carb" onclick="filterGroup(this, 'carb')">
+          <span class="icon">🌾</span>คาร์โบไฮเดรต
+        </button>
+        <button class="food-group-btn protein" data-group="protein" onclick="filterGroup(this, 'protein')">
+          <span class="icon">🥩</span>เนื้อสัตว์
+        </button>
+        <button class="food-group-btn fat" data-group="fat" onclick="filterGroup(this, 'fat')">
+          <span class="icon">🥑</span>ไขมัน
+        </button>
+        <button class="food-group-btn veg" data-group="veg" onclick="filterGroup(this, 'veg')">
+          <span class="icon">🥦</span>ผัก
+        </button>
+        <button class="food-group-btn fruit" data-group="fruit" onclick="filterGroup(this, 'fruit')">
+          <span class="icon">🍎</span>ผลไม้
+        </button>
+      </div>
+
+      <!-- Search -->
+      <input type="text" class="menu-search" placeholder="🔍 ค้นหารายการอาหาร..." oninput="searchMenu(this.value)" id="menuSearch">
+
+      <!-- Menu Grid -->
+      <div class="menu-grid" id="menuGrid"></div>
+
+      <!-- Carb qty -->
+      <div class="carb-qty-row">
+        <label>จำนวนทัพพี / ส่วน</label>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(-0.5)">−</button>
+          <span class="qty-val" id="carbQty">1</span>
+          <button class="qty-btn" onclick="changeQty(0.5)">+</button>
+        </div>
+      </div>
+
+      <button class="add-btn" onclick="addSelectedFood()" style="width:100%">✅ เพิ่มอาหารที่เลือก</button>
+    </div>
+
+    <!-- Free Text -->
+    <div class="card">
+      <div class="card-title"><span>✏️</span> กรอกรายการอาหารเอง</div>
+      <textarea class="free-food-area" id="freeFood" placeholder="เช่น ข้าวสวย 1 ทัพพี, ต้มยำกุ้ง, ผักต้ม..."></textarea>
+      <div class="insulin-row" style="grid-template-columns:1fr auto;">
+        <div class="form-group">
+          <label class="form-label">พลังงาน (KCAL) — ถ้าทราบ</label>
+          <input type="number" class="form-input" id="freeKcal" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">คาร์บ (ส่วน)</label>
+          <input type="number" class="form-input" id="freeCarb" placeholder="0" min="0" step="0.5" style="width:80px">
+        </div>
+      </div>
+      <button class="add-btn" onclick="addFreeFood()" style="width:100%">✅ เพิ่มรายการ</button>
+    </div>
+
+    <!-- Insulin -->
+    <div class="card">
+      <div class="card-title"><span>💉</span> บันทึกการฉีดยา</div>
+      <div class="insulin-row">
+        <div class="form-group">
+          <label class="form-label">ประเภทยา</label>
+          <select class="form-select" id="insulinType">
+            <option value="RI">RI (Regular Insulin)</option>
+            <option value="NPH">NPH (Intermediate)</option>
+            <option value="Glargine">Glargine (Lantus)</option>
+            <option value="Detemir">Detemir (Levemir)</option>
+            <option value="Aspart">Aspart (NovoRapid)</option>
+            <option value="Lispro">Lispro (Humalog)</option>
+            <option value="Glulisine">Glulisine (Apidra)</option>
+            <option value="IPH">IPH (Premixed)</option>
+            <option value="70/30">70/30 Premix</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ปริมาณ (unit)</label>
+          <input type="number" class="form-input" id="insulinDose" placeholder="0" min="0" style="width:80px">
+        </div>
+        <button class="add-btn rose" onclick="addInsulin()">+ เพิ่ม</button>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">เวลาฉีด</label>
+        <select class="form-select" id="insulinTiming">
+          <option value="ก่อนอาหารเช้า">ก่อนอาหารเช้า</option>
+          <option value="หลังอาหารเช้า">หลังอาหารเช้า</option>
+          <option value="ก่อนอาหารกลางวัน">ก่อนอาหารกลางวัน</option>
+          <option value="หลังอาหารกลางวัน">หลังอาหารกลางวัน</option>
+          <option value="ก่อนอาหารเย็น">ก่อนอาหารเย็น</option>
+          <option value="หลังอาหารเย็น">หลังอาหารเย็น</option>
+          <option value="ก่อนนอน">ก่อนนอน</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveDay()">💾 บันทึกข้อมูลวันนี้</button>
+  </div>
+
+  <!-- ═══════════════ TAB: LOG ═══════════════ -->
+  <div class="section" id="tab-log">
+    <div class="card">
+      <div class="card-title"><span>📋</span> รายการอาหารที่รับประทานวันนี้</div>
+      <div id="foodLogContainer">
+        <div class="empty-state"><div class="icon">🍽️</div>ยังไม่มีรายการอาหาร<br>เพิ่มจากแท็บ "บันทึก"</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>💉</span> ยาที่ได้รับวันนี้</div>
+      <div id="insulinLogContainer">
+        <div class="empty-state"><div class="icon">💉</div>ยังไม่มีบันทึกยา</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TAB: SUMMARY ═══════════════ -->
+  <div class="section" id="tab-summary">
+    <div class="summary-grid">
+      <div class="summary-card s-kcal">
+        <div class="s-val" id="totalKcal">0</div>
+        <div class="s-lbl">KCAL วันนี้</div>
+      </div>
+      <div class="summary-card s-carb">
+        <div class="s-val" id="totalCarb">0</div>
+        <div class="s-lbl">คาร์บ (ส่วน)</div>
+      </div>
+      <div class="summary-card s-insulin">
+        <div class="s-val" id="totalInsulin">0</div>
+        <div class="s-lbl">Insulin (unit)</div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card">
+      <div class="card-title"><span>📊</span> เทียบกับเป้าหมายต่อวัน</div>
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:4px;">
+          <span>พลังงาน </span>
+          <span id="kcalPct">0%</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" id="kcalBar" style="width:0%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:4px;">
+          <span>คาร์บ </span>
+          <span id="carbPct">0 ส่วน</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" id="carbBar" style="width:0%"></div></div>
+        <div class="prog-label">
+          <span>0</span><span>6 ส่วน</span><span>12 ส่วน</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meal Breakdown -->
+    <div class="card" id="mealBreakdownCard">
+      <div class="card-title"><span>🍽️</span> สรุปแยกตามมื้อ</div>
+      <div id="mealBreakdown">
+        <div class="empty-state"><div class="icon">📊</div>ยังไม่มีข้อมูล</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TAB: GUIDE ═══════════════ -->
+  <div class="section" id="tab-guide">
+    <div class="tip-banner">
+      <strong>⚠️ หมายเหตุสำคัญสำหรับการควบคุมเบาหวาน</strong>
+      การนับคาร์บอิงตามหลักโภชนาการมาตรฐาน (1 ส่วนคาร์บ = คาร์โบไฮเดรต 15 กรัม) เป้าหมายแนะนำคือ 3-4 ส่วน/มื้อหลัก เพื่อช่วยรักษาระดับน้ำตาลให้คงที่
+    </div>
+
+    <!-- คลังคู่มือภาพ -->
+    <div class="card">
+      <div class="card-title"><span>📖</span> คลังคู่มือภาพนับคาร์โบไฮเดรต (แยกตามหมู่)</div>
+      
+      <!-- หมวด ข้าว-แป้ง -->
+      <div class="guide-section-title v-title-carb">🌾 หมวดข้าว-แป้ง (1 ส่วนคาร์บ = 15 กรัม)</div>
+      <div class="visual-grid">
+        <div class="visual-card"><div class="visual-img-box bg-carb">image</div><div class="visual-desc">ข้าวสวย 1 ทัพพี<br><b>= 1 คาร์บ</b></div></div>
+        <div class="visual-card"><div class="visual-img-box bg-carb">image</div><div class="visual-desc">ขนมปัง 1 แผ่น<br><b>= 1 คาร์บ</b></div></div>
+        <div class="visual-card"><div class="visual-img-box bg-carb">image</div><div class="visual-desc">เส้นก๋วยเตี๋ยวสุก 1 ทัพพี<br><b>= 1 คาร์บ</b></div></div>
+        <div class="visual-card"><div class="visual-img-box bg-carb">image</div><div class="visual-desc">ข้าวเหนียวสุก 0.5 ทัพพี<br><b>= 1 คาร์บ</b></div></div>
+      </div>
+
+      <!-- หมวด ผลไม้ -->
+      <div class="guide-section-title v-title-fruit">🍎 หมวดผลไม้ (1 ส่วนคาร์บ = 15 กรัม)</div>
+      <div class="visual-grid">
+        <div class="visual-card"><div class="visual-img-box bg-fruit">image</div><div class="visual-desc">ฝรั่ง 0.5 ผลกลาง<br><b>= 1 คาร์บ</b></div></div>
+        <div class="visual-card"><div class="visual-img-box bg-fruit">image</div><div class="visual-desc">แอปเปิ้ลผลเล็ก 1 ผล<br><b>= 1 คาร์บ</b></div></div>
+      </div>
+    </div>
+
+    <!-- Target carbs (ปรับเหลือเฉพาะมื้อหลักเต็มความกว้าง) -->
+    <div class="card">
+      <div class="card-title"><span>🎯</span> เป้าหมายคาร์บพึงประสงค์ต่อวัน</div>
+      <div style="background:var(--teal-lt);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--teal-dk);font-family:'IBM Plex Mono',monospace;">3–4</div>
+        <div style="font-size:.8rem;color:var(--teal-dk);font-weight:600;">ส่วน / มื้อหลัก (เช้า, กลางวัน, เย็น)</div>
+      </div>
+    </div>
+
+    <!-- Insulin Instruction -->
+    <div class="card">
+      <div class="card-title"><span>💊</span> ยาอินซูลินและการทำงาน</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="padding:10px 12px;background:var(--rose-lt);border-radius:10px;">
+          <div style="font-weight:700;font-size:.85rem;color:var(--rose);">RI — Regular Insulin</div>
+          <div style="font-size:.78rem;color:#9F1239;margin-top:2px;">ออกฤทธิ์เร็ว ฉีดก่อนมื้ออาหาร 30 นาที เพื่อจัดการคาร์บในมื้อนั้น</div>
+        </div>
+        <div style="padding:10px 12px;background:var(--teal-lt);border-radius:10px;">
+          <div style="font-weight:700;font-size:.85rem;color:var(--teal-dk);">NPH / Glargine / Detemir</div>
+          <div style="font-size:.78rem;color:var(--teal-dk);margin-top:2px;">ยาออกฤทธิ์นาน ควบคุมระดับน้ำตาลพื้นฐานช่วงอดอาหารหรือตอนนอน</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════ JAVASCRIPT LOGIC ═══════════════ -->
+<script>
+const MENU_DB = [
+  { name: "ผัดซีอิ๊วหมูใส่ไข่",    kcal: 535, carb: 3.3, group: "carb" },
+  { name: "ราดหน้าหมู",            kcal: 452, carb: 2.8, group: "carb" },
+  { name: "ก๋วยเตี๋ยวเส้นหมี่ไก่มะระ", kcal: 300, carb: 2.0, group: "carb" },
+  { name: "สุกี้ทะเล",             kcal: 235, carb: 1.7, group: "carb" },
+  { name: "ผัดไทยใส่ไข่",          kcal: 600, carb: 3.0, group: "carb" },
+  { name: "ข้าวมันไก่",            kcal: 380, carb: 2.3, group: "carb" },
+  { name: "ข้าวกล้องสวย 1 ทัพพี",    kcal: 80,  carb: 1.0, group: "carb" },
+  { name: "ไข่ต้ม 1 ฟอง",          kcal: 78,  carb: 0,   group: "protein" },
+  { name: "ไก่ต้มไม่มีหนัง 60 กรัม", kcal: 90,  carb: 0,   group: "protein" },
+  { name: "ปลานึ่งมะนาว",          kcal: 120, carb: 0.2, group: "protein" },
+  { name: "ผักต้ม / ผัดน้ำมันน้อย", kcal: 50,  carb: 0.3, group: "veg" },
+  { name: "ต้มจืดผักรวม",          kcal: 40,  carb: 0.2, group: "veg" }
+];
+
+let currentMeal = "เช้า";
+let currentGroup = "all";
+let selectedFoodItem = null;
+let carbQty = 1;
+
+let foodLog = [];
+let insulinLog = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  const now = new Date();
+  document.getElementById("dateBadge").innerText = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+  renderMenu();
+  updateLogView();
+  updateSummary();
+});
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+  
+  const tabs = ['record', 'log', 'summary', 'guide'];
+  const idx = tabs.indexOf(tabId);
+  if(idx !== -1) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  document.getElementById(`tab-${tabId}`).classList.add('active');
+}
+
+function selectMeal(btn) {
+  document.querySelectorAll('.meal-time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMeal = btn.getAttribute('data-meal');
+}
+
+function filterGroup(btn, group) {
+  document.querySelectorAll('.food-group-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentGroup = group;
+  renderMenu();
+}
+
+function searchMenu(val) {
+  renderMenu(val.trim());
+}
+
+function renderMenu(query = "") {
+  const grid = document.getElementById("menuGrid");
+  grid.innerHTML = "";
+  
+  const filtered = MENU_DB.filter(item => {
+    const matchesGroup = currentGroup === "all" || item.group === currentGroup;
+    const matchesSearch = item.name.includes(query);
+    return matchesGroup && matchesSearch;
+  });
+
+  if(filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column:span 2;text-align:center;color:var(--muted);padding:20px;">ไม่พบอาหารคลัง</div>';
+    return;
+  }
+
+  filtered.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "menu-item";
+    if(selectedFoodItem && selectedFoodItem.name === item.name) btn.classList.add("selected");
+    btn.innerHTML = `
+      <div class="name">${item.name}</div>
+      <div class="stats">
+        <span class="badge kcal">${item.kcal} kcal</span>
+        <span class="badge carb">${item.carb} คาร์บ</span>
+      </div>
+    `;
+    btn.onclick = () => {
+      document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('selected'));
+      selectedFoodItem = (selectedFoodItem?.name === item.name) ? null : item;
+      if(selectedFoodItem) btn.classList.add("selected");
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function changeQty(amt) {
+  carbQty = Math.max(0.5, carbQty + amt);
+  document.getElementById("carbQty").innerText = carbQty;
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.innerText = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+function addSelectedFood() {
+  if(!selectedFoodItem) { showToast("⚠️ กรุณาเลือกรายการอาหารก่อน"); return; }
+  foodLog.push({
+    name: selectedFoodItem.name, meal: currentMeal,
+    kcal: Math.round(selectedFoodItem.kcal * carbQty), carb: selectedFoodItem.carb * carbQty
+  });
+  showToast(`เพิ่มอาหารมื้อ${currentMeal}แล้ว!`);
+  updateLogView(); updateSummary();
+}
+
+function addFreeFood() {
+  const name = document.getElementById("freeFood").value.trim();
+  const kcal = parseFloat(document.getElementById("freeKcal").value) || 0;
+  const carb = parseFloat(document.getElementById("freeCarb").value) || 0;
+  if(!name) { showToast("⚠️ กรุณากรอกชื่ออาหาร"); return; }
+  foodLog.push({ name, meal: currentMeal, kcal, carb });
+  showToast("เพิ่มรายการอาหารแล้ว!");
+  document.getElementById("freeFood").value = "";
+  document.getElementById("freeKcal").value = "";
+  document.getElementById("freeCarb").value = "";
+  updateLogView(); updateSummary();
+}
+
+function addInsulin() {
+  const type = document.getElementById("insulinType").value;
+  const dose = parseFloat(document.getElementById("insulinDose").value) || 0;
+  const timing = document.getElementById("insulinTiming").value;
+  if(dose <= 0) { showToast("⚠️ กรุณาระบุปริมาณยา"); return; }
+  insulinLog.push({ type, dose, timing });
+  showToast("บันทึกการรับยาแล้ว!");
+  document.getElementById("insulinDose").value = "";
+  updateLogView(); updateSummary();
+}
+
+function deleteFood(idx) { foodLog.splice(idx, 1); updateLogView(); updateSummary(); }
+function deleteInsulin(idx) { insulinLog.splice(idx, 1); updateLogView(); updateSummary(); }
+
+function updateLogView() {
+  const fBox = document.getElementById("foodLogContainer");
+  fBox.innerHTML = foodLog.length === 0 ? `<div class="empty-state"><div class="icon">🍽️</div>ยังไม่มีรายการอาหาร</div>` :
+    '<ul class="log-list">' + foodLog.map((item, i) => `
+      <li class="log-item">
+        <div class="log-left"><div class="log-name">${item.name}</div><div class="log-meta">มื้อ${item.meal} | ${item.kcal} kcal | คาร์บ ${item.carb} ส่วน</div></div>
+        <button class="del-btn" onclick="deleteFood(${i})">🗑️</button>
+      </li>`).join('') + '</ul>';
+
+  const iBox = document.getElementById("insulinLogContainer");
+  iBox.innerHTML = insulinLog.length === 0 ? `<div class="empty-state"><div class="icon">💉</div>ยังไม่มีบันทึกยา</div>` :
+    '<ul class="log-list">' + insulinLog.map((item, i) => `
+      <li class="log-item">
+        <div class="log-left"><div class="log-name">${item.type} (${item.dose} Unit)</div><div class="log-meta">${item.timing}</div></div>
+        <button class="del-btn" onclick="deleteInsulin(${i})">🗑️</button>
+      </li>`).join('') + '</ul>';
+}
+
+function updateSummary() {
+  let tKcal = 0, tCarb = 0, tInsulin = 0;
+  let breakdown = { "เช้า": { kcal: 0, carb: 0 }, "กลางวัน": { kcal: 0, carb: 0 }, "เย็น": { kcal: 0, carb: 0 } };
+
+  foodLog.forEach(item => {
+    tKcal += item.kcal; tCarb += item.carb;
+    if(breakdown[item.meal]) { breakdown[item.meal].kcal += item.kcal; breakdown[item.meal].carb += item.carb; }
+  });
+  insulinLog.forEach(item => tInsulin += item.dose);
+
+  document.getElementById("totalKcal").innerText = tKcal;
+  document.getElementById("totalCarb").innerText = tCarb.toFixed(1);
+  document.getElementById("totalInsulin").innerText = tInsulin;
+
+  // Progress calculations (Targets: 2000kcal, 12 carbs)
+  const kPct = Math.min(100, (tKcal / 2000) * 100);
+  document.getElementById("kcalPct").innerText = Math.round(kPct) + "%";
+  document.getElementById("kcalBar").style.width = kPct + "%";
+  
+  const cPct = Math.min(100, (tCarb / 12) * 100);
+  document.getElementById("carbPct").innerText = `${tCarb.toFixed(1)} / 12 ส่วน`;
+  document.getElementById("carbBar").style.width = cPct + "%";
+
+  document.getElementById("mealBreakdown").innerHTML = Object.keys(breakdown).map(m => `
+    <div class="meal-section">
+      <div class="meal-section-header">${m==='เช้า'?'🌅':m==='กลางวัน'?'☀️':'🌆'} มื้อ${m}</div>
+      <div style="display:flex;justify-content:space-between;padding:0 10px;font-size:0.85rem;">
+        <span>พลังงาน: <b>${breakdown[m].kcal} kcal</b></span>
+        <span>คาร์บ: <b>${breakdown[m].carb.toFixed(1)} ส่วน</b></span>
+      </div>
+    </div>`).join('');
+}
+
+function saveDay() {
+  showToast("💾 บันทึกข้อมูลวันนี้สำเร็จ!");
+}
+</script>
+</body>
+</html>
